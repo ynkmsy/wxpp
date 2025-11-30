@@ -1,7 +1,5 @@
-// WXPush - 微信模板消息推送服务
-// 作者：SY
-// 更新时间：2025
-// 基于 Cloudflare Workers 实现，极简、高效、安全
+// 微信模板消息推送服务
+// SY
 
 // NEW: 统一参数提取函数，支持 GET/POST/JSON/FormData/Authorization
 async function getParams(request) {
@@ -234,7 +232,7 @@ export default {
     <p>极简、高效、稳定的微信模板消息推送服务<br>支持 Cloudflare Workers 一键部署</p>
     <div class="author">作者：<strong>SY</strong></div>
     <div style="margin-top:32px">
-      <a class="btn" href="https://github.com/yourname" target="_blank">
+      <a class="btn" href="https://github.com/ynkmsy/wxpp" target="_blank">
         <svg class="logo" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.73.5.75 5.48.75 11.75c0 4.93 3.2 9.11 7.64 10.59...（GitHub图标）"/></svg>
         GitHub
       </a>
