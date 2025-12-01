@@ -109,7 +109,7 @@ export default {
     <p style="text-align:center;margin-bottom:24px;opacity:0.9;">微信模板消息测试控制台</p>
     <form id="f">
       <label>标题</label><input name="title" value="SY的消息通知" required>
-      <label>内容（支持 Markdown）</label><textarea name="content" rows="5" required>这是一条超美推送\n\n时间：{{now}}</textarea>
+      <label>内容（支持 Markdown）</label><textarea name="content" rows="5" required>这是一条超美推送</textarea>
       <label>用户ID（|分隔）</label><input name="userid" placeholder="留空使用环境变量">
       <input type="hidden" name="token" value="${safeToken}">
       <button type="submit">发送消息</button>
