@@ -1,11 +1,37 @@
-配置环境变量 (重要)
+一.打开：https://mp.weixin.qq.com/debug/cgi-bin/sandbox?t=sandbox/login
 
-Worker 进入 设置 > 变量。
-在 环境变量 部分，点击 添加变量，依次添加以下配置。这些是服务运行所必需的敏感信息。
-API_TOKEN: 用于接口调用的访问令牌，请设置一个足够复杂的随机字符串。
-WX_APPID: 您的微信公众号 AppID。
-WX_SECRET: 您的微信公众号 AppSecret。
-WX_USERID: 默认接收消息用户的 OpenID，多个用户请用 | 符号分隔 (例如 openid1|openid2)。
-WX_TEMPLATE_ID: 您要使用的微信模板消息 ID。
-WX_BASE_URL: (可选) 点击模板消息后跳转的基础 URL。
+微信扫码登录
+
+1.appID
+2.appsecret
+测试号二维码（用于关注）
+
+
+二、部署推送服务
+
+1.Cloudflare部署Worker.js
+
+2.配置环境变量
+  WX_APPID	微信测试号 AppID
+  WX_SECRET	微信测试号 AppSecret
+  WX_OPENID	接收者 OpenID
+
+三.哪吒监控
+
+ 请求方式： POST 
+ URL： https://你的worker域名.workers.dev
+ 请求头: {"Content-Type": "application/json"}
+ 请求体: {
+  "content": "🖧 服务器监控通知\n⚙️#NEZHA#\n🖥️ 名称: #SERVER.NAME#\n⏰ 时间: #DATETIME#"
+}
+
+四.短信转发器
+ 请求方式： POST 
+ webhook server： https://你的worker域名.workers.dev
+ 消息模板: {
+    "title": "📩 SMS 短信",
+    "content": "👤 发信人：{{FROM}}\n💬 内容：{{SMS}}\n📶 卡槽：{{CARD_SLOT}}\n🔢 订阅ID：{{CARD_SUBID}}\n⏰ 时间：{{RECEIVE_TIME}}\n📱 设备：{{DEVICE_NAME}}"
+}
+
+
 
