@@ -1,5 +1,3 @@
-
-
 function generateLandingPageHTML(title, message, date) {
 
   const bg = "linear-gradient(160deg,#d0e0ff,#ffffff)";
