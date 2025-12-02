@@ -31,7 +31,7 @@ async function getParams(request) {
 
 const GITHUB_URL = "https://github.com/ynkmsy/wxpp";
 
-// 内置落地页HTML
+// 内置落地页HTML（Apple 暗色磨砂玻璃风）
 const BUILTIN_LANDING_PAGE_HTML = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -44,148 +44,38 @@ const BUILTIN_LANDING_PAGE_HTML = `<!DOCTYPE html>
 /* --------------------------
    Apple Dark Frosted UI
    -------------------------- */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-}
-
-html, body {
-  width: 100%;
-  height: 100%;
-  background: #000;
-  color: #fff;
-  overflow-x: hidden;
-}
-
-/* 背景 Apple 风格光斑 */
-.background-blur {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.09), transparent 60%),
-              radial-gradient(circle at 80% 70%, rgba(255,255,255,0.06), transparent 60%);
-  filter: blur(60px);
-}
-
-/* 内容容器 */
-.container {
-  max-width: 700px;
-  margin: 20px auto 40px;
-  padding: 22px;
-}
-
-/* 大卡片：苹果磨砂玻璃 */
-.card {
-  background: rgba(255,255,255,0.08);
-  backdrop-filter: saturate(180%) blur(22px);
-  -webkit-backdrop-filter: saturate(180%) blur(22px);
-  border-radius: 26px;
-  border: 1px solid rgba(255,255,255,0.09);
-  padding: 22px 20px;
-  margin-bottom: 20px;
-
-  box-shadow: 
-      0 0 40px rgba(255,255,255,0.03),
-      inset 0 0 1px rgba(255,255,255,0.25);
-}
-
-/* 标题（iOS 通知风） */
-.title {
-  text-align: center;
-  font-size: 1.65rem;
-  font-weight: 700;
-  margin-bottom: 20px;
-  letter-spacing: 0.5px;
-  color: #fff;
-
-  /* 苹果风炫酷光效 */
-  position: relative;
-  text-shadow:
-      0 0 6px rgba(255,255,255,0.55),
-      0 0 14px rgba(255,255,255,0.35),
-      0 0 28px rgba(120,160,255,0.30),       /* 蓝紫柔光 */
-      0 0 48px rgba(120,200,255,0.18);      /* 远距离淡光 */
-}
-
-.title::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: -10px;
-  transform: translateX(-50%);
-
-  width: 40%;
-  height: 2px;
-  border-radius: 50px;
-  background: linear-gradient(90deg,
-      rgba(255,255,255,0) 0%,
-      rgba(255,255,255,0.45) 50%,
-      rgba(255,255,255,0) 100%
-  );
-
-  filter: blur(2px) brightness(1.6);
-  opacity: 0.8;
-}
-
-/* 信息区域 */
-.label {
-  font-size: 0.9rem;
-  opacity: 0.7;
-  margin-bottom: 6px;
-}
-
-.content {
-  font-size: 1.05rem;
-  line-height: 1.75;
-  white-space: pre-line;
-  overflow-wrap: break-word;
-}
-
-/* Markdown 样式优化 */
-.content img {
-  max-width: 100%;
-  border-radius: 14px;
-  margin: 8px 0;
-}
-
-.content pre {
-  background: rgba(255,255,255,0.08);
-  padding: 12px;
-  border-radius: 14px;
-  overflow-x: auto;
-}
-
-.content code {
-  background: rgba(255,255,255,0.10);
-  padding: 3px 6px;
-  border-radius: 6px;
-}
-
-/* 底部信息 */
-.footer {
-  text-align: center;
-  opacity: 0.5;
-  font-size: 13px;
-  margin-top: 28px;
-}
-.footer a {
-  color: #fff;
-  text-decoration: none;
-  border-bottom: 1px solid rgba(255,255,255,0.3);
-}
-.footer a:hover {
-  opacity: 0.6;
-}
-
-/* 手机端优化 */
-@media(max-width: 480px) {
-  .container { padding: 14px; }
-  .card { padding: 18px 16px; border-radius: 22px; }
-  .title { font-size: 1.35rem; }
-  .content { font-size: 1.0rem; }
+* {margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;
+   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;}
+html,body{width:100%;height:100%;background:#000;color:#fff;overflow-x:hidden;}
+.background-blur{position:fixed;inset:0;z-index:-1;
+   background:radial-gradient(circle at 20% 30%,rgba(255,255,255,0.09),transparent 60%),
+              radial-gradient(circle at 80% 70%,rgba(255,255,255,0.06),transparent 60%);
+   filter:blur(60px);}
+.container{max-width:700px;margin:20px auto 40px;padding:22px;}
+.card{background:rgba(255,255,255,0.08);backdrop-filter:saturate(180%) blur(22px);
+   -webkit-backdrop-filter:saturate(180%) blur(22px);border-radius:26px;
+   border:1px solid rgba(255,255,255,0.09);padding:22px 20px;margin-bottom:20px;
+   box-shadow:0 0 40px rgba(255,255,255,0.03),inset 0 0 1px rgba(255,255,255,0.25);}
+.title{text-align:center;font-size:1.65rem;font-weight:700;margin-bottom:20px;letter-spacing:0.5px;color:#fff;position:relative;
+   text-shadow:0 0 6px rgba(255,255,255,0.55),0 0 14px rgba(255,255,255,0.35),
+               0 0 28px rgba(120,160,255,0.30),0 0 48px rgba(120,200,255,0.18);}
+.title::after{content:"";position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);
+   width:40%;height:2px;border-radius:50px;
+   background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0.45) 50%,rgba(255,255,255,0) 100%);
+   filter:blur(2px) brightness(1.6);opacity:0.8;}
+.label{font-size:0.9rem;opacity:0.7;margin-bottom:6px;}
+.content{font-size:1.05rem;line-height:1.75;white-space:pre-line;overflow-wrap:break-word;}
+.content img{max-width:100%;border-radius:14px;margin:8px 0;}
+.content pre{background:rgba(255,255,255,0.08);padding:12px;border-radius:14px;overflow-x:auto;}
+.content code{background:rgba(255,255,255,0.10);padding:3px 6px;border-radius:6px;}
+.footer{text-align:center;opacity:0.5;font-size:13px;margin-top:28px;}
+.footer a{color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.3);}
+.footer a:hover{opacity:0.6;}
+@media(max-width:480px){
+  .container{padding:14px;}
+  .card{padding:18px 16px;border-radius:22px;}
+  .title{font-size:1.35rem;}
+  .content{font-size:1.0rem;}
 }
 </style>
 </head>
@@ -241,15 +131,12 @@ function validateInput(title, content) {
   if (!content || typeof content !== 'string') {
     return { valid: false, error: '内容不能为空且必须是字符串' };
   }
-  
-  // 限制长度
   if (title.length > 100) {
     return { valid: false, error: '标题长度不能超过100字符' };
   }
   if (content.length > 5000) {
     return { valid: false, error: '内容长度不能超过5000字符' };
   }
-  
   return { valid: true };
 }
 
@@ -266,35 +153,22 @@ function escapeHtml(unsafe) {
 // 获取微信 access_token（带缓存）
 async function getStableToken(appid, secret, env) {
   const now = Date.now();
-  
-  // 检查缓存是否有效（提前5分钟过期）
-  if (tokenCache.data && 
-      tokenCache.appid === appid && 
-      tokenCache.secret === secret && 
-      now < tokenCache.expiry - 5 * 60 * 1000) {
+  if (tokenCache.data && tokenCache.appid === appid && tokenCache.secret === secret && now < tokenCache.expiry - 5 * 60 * 1000) {
     return tokenCache.data;
   }
-  
   try {
     const r = await fetch('https://api.weixin.qq.com/cgi-bin/stable_token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ grant_type: 'client_credential', appid, secret })
     });
-    
-    if (!r.ok) {
-      throw new Error(`微信API请求失败: ${r.status}`);
-    }
-    
+    if (!r.ok) throw new Error(`微信API请求失败: ${r.status}`);
     const d = await r.json();
-    
     if (d.access_token) {
-      // 缓存 access_token，默认2小时（微信有效期）
       tokenCache.data = d.access_token;
       tokenCache.expiry = now + 2 * 60 * 60 * 1000;
       tokenCache.appid = appid;
       tokenCache.secret = secret;
-      
       return d.access_token;
     } else {
       throw new Error(`获取access_token失败: ${d.errmsg || JSON.stringify(d)}`);
@@ -307,37 +181,28 @@ async function getStableToken(appid, secret, env) {
 
 // 获取落地页URL
 function getLandingPageUrl(env) {
-  // 使用 WX_LANDING_PAGE_URL 环境变量
   if (env.WX_LANDING_PAGE_URL) {
     return env.WX_LANDING_PAGE_URL.replace(/\/+$/, '');
   }
-  
-  return null; // 表示使用内置落地页
+  return null;
 }
 
 // 构建完整的落地页URL
 function buildLandingUrl(request, env, title, content, date) {
   const landingPageUrl = getLandingPageUrl(env);
-  
-  // 使用自定义落地页
   if (landingPageUrl) {
     const params = new URLSearchParams({
       title: encodeURIComponent(title),
       message: encodeURIComponent(content),
       date: encodeURIComponent(date)
     });
-    
-    // 检查URL是否已经包含查询参数
     const separator = landingPageUrl.includes('?') ? '&' : '?';
     return `${landingPageUrl}${separator}${params.toString()}`;
   }
-  
-  // 使用内置落地页
   const url = new URL(request.url);
   const host = request.headers.get('host');
   const protocol = url.protocol || 'https:';
   const baseUrl = `${protocol}//${host}`;
-  
   return `${baseUrl}/view?title=${encodeURIComponent(title)}&message=${encodeURIComponent(content)}&date=${encodeURIComponent(date)}`;
 }
 
@@ -485,103 +350,106 @@ Authorization: Bearer 你的API_TOKEN
       });
     }
 
-    // 2. 下载独立落地页
+    // 2. 下载独立落地页 → Apple 暗色磨砂玻璃风）
     if (path === '/download/landing-page') {
       const standaloneHtml = `<!DOCTYPE html>
-<!-- 
-微信消息推送 - 独立落地页
-部署说明：
-1. 将此文件上传到任何静态托管服务
-2. 设置 WX_LANDING_PAGE_URL 环境变量指向此文件URL
-3. 确保URL格式为：https://your-domain.com/landing.html?title=xxx&message=xxx&date=xxx
+<!--
+微信消息推送 - 独立落地页（Apple 暗色磨砂玻璃风）
+与 Worker 内置 /view 页面 100% 一致
+部署后设置环境变量 WX_LANDING_PAGE_URL 即可使用
 -->
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5.0,user-scalable=yes">
-    <title>微信消息详情</title>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <style>
-        * {margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI','Microsoft YaHei',sans-serif;-webkit-tap-highlight-color:transparent;}
-        html, body {height:100%;overflow:auto;background:linear-gradient(135deg,#0f0c29,#1a1a3e);color:#e0f7fa;position:relative;}
-        body {min-height:100vh;padding:16px;display:flex;justify-content:center;align-items:flex-start;position:relative;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-        body::before {content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 15% 35%,rgba(0,150,136,0.18),transparent 50%),radial-gradient(circle at 85% 70%,rgba(0,188,212,0.15),transparent 50%);z-index:-1;}
-        .container {max-width:760px;width:100%;background:rgba(18,18,40,0.95);backdrop-filter:blur(16px);border-radius:18px;padding:36px 28px;margin:20px auto;box-shadow:0 16px 48px rgba(0,0,0,0.7),0 0 0 1px rgba(0,150,136,0.3),0 0 32px rgba(0,188,212,0.35);position:relative;overflow:visible;min-height:auto;}
-        .container::before {content:'';position:absolute;top:0;left:0;width:100%;height:5px;background:linear-gradient(90deg,#00bfa5,#00acc1);}
-        .title {font-size:1.68rem;text-align:center;margin-bottom:34px;color:#00bfa5;letter-spacing:1.8px;line-height:1.4;position:relative;word-break:break-word;}
-        .title::after {content:'';position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);width:90px;height:2.5px;background:linear-gradient(90deg,transparent,#00bfa5,transparent);}
-        .info-card {background:rgba(25,30,65,0.88);border-left:4px solid #00bfa5;border-radius:12px;padding:22px;margin:22px 0;box-shadow:0 6px 18px rgba(0,0,0,0.4);overflow-wrap:break-word;word-break:break-word;}
-        .info-label {font-size:1.08rem;color:#80deea;margin-bottom:11px;display:flex;align-items:center;font-weight:600;}
-        .info-label::before {content:'';width:8px;height:8px;background:#00bfa5;border-radius:50%;margin-right:11px;flex-shrink:0;}
-        .info-content {font-size:1.06rem;color:#e0f7fa;line-height:1.8;white-space:pre-line;overflow-wrap:break-word;word-break:break-word;}
-        .info-content img {max-width:100%;height:auto;border-radius:8px;margin:8px 0;}
-        .info-content pre {background:rgba(0,0,0,0.3);padding:12px;border-radius:8px;overflow-x:auto;}
-        .info-content code {background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;}
-        .info-content a {color:#00bfa5;text-decoration:none;border-bottom:1px solid #00bfa5;}
-        .info-content a:hover {color:#80deea;border-color:#80deea;}
-        .footer {text-align:center;margin-top:46px;opacity:0.78;font-size:13.5px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.1);}
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>{{TITLE}}</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<style>
+/* Apple Dark Frosted UI - 与内置完全一致 */
+* {margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;
+   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;}
+html,body{width:100%;height:100%;background:#000;color:#fff;overflow-x:hidden;}
+.background-blur{position:fixed;inset:0;z-index:-1;
+   background:radial-gradient(circle at 20% 30%,rgba(255,255,255,0.09),transparent 60%),
+              radial-gradient(circle at 80% 70%,rgba(255,255,255,0.06),transparent 60%);
+   filter:blur(60px);}
+.container{max-width:700px;margin:20px auto 40px;padding:22px;}
+.card{background:rgba(255,255,255,0.08);backdrop-filter:saturate(180%) blur(22px);
+   -webkit-backdrop-filter:saturate(180%) blur(22px);border-radius:26px;
+   border:1px solid rgba(255,255,255,0.09);padding:22px 20px;margin-bottom:20px;
+   box-shadow:0 0 40px rgba(255,255,255,0.03),inset 0 0 1px rgba(255,255,255,0.25);}
+.title{text-align:center;font-size:1.65rem;font-weight:700;margin-bottom:20px;letter-spacing:0.5px;color:#fff;position:relative;
+   text-shadow:0 0 6px rgba(255,255,255,0.55),0 0 14px rgba(255,255,255,0.35),
+               0 0 28px rgba(120,160,255,0.30),0 0 48px rgba(120,200,255,0.18);}
+.title::after{content:"";position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);
+   width:40%;height:2px;border-radius:50px;
+   background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0.45) 50%,rgba(255,255,255,0) 100%);
+   filter:blur(2px) brightness(1.6);opacity:0.8;}
+.label{font-size:0.9rem;opacity:0.7;margin-bottom:6px;}
+.content{font-size:1.05rem;line-height:1.75;white-space:pre-line;overflow-wrap:break-word;}
+.content img{max-width:100%;border-radius:14px;margin:8px 0;}
+.content pre{background:rgba(255,255,255,0.08);padding:12px;border-radius:14px;overflow-x:auto;}
+.content code{background:rgba(255,255,255,0.10);padding:3px 6px;border-radius:6px;}
+.footer{text-align:center;opacity:0.5;font-size:13px;margin-top:28px;}
+.footer a{color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.3);}
+.footer a:hover{opacity:0.6;}
+@media(max-width:480px){
+  .container{padding:14px;}
+  .card{padding:18px 16px;border-radius:22px;}
+  .title{font-size:1.35rem;}
+  .content{font-size:1.0rem;}
+}
+</style>
 </head>
 <body>
+<div class="background-blur"></div>
 <div class="container">
-    <h1 class="title" id="pageTitle">消息详情</h1>
-    <div class="info-card">
-        <div class="info-label">通知内容</div>
-        <div class="info-content" id="messageContent">正在加载消息内容...</div>
-    </div>
-    <div class="info-card">
-        <div class="info-label">时间</div>
-        <div class="info-content" id="messageDate">-</div>
-    </div>
-    <div class="footer">
-        Powered by <strong>WX Push</strong>
-    </div>
+  <div class="card">
+    <h1 class="title" id="title">微信消息通知</h1>
+  </div>
+  <div class="card">
+    <div class="label">通知内容</div>
+    <div class="content" id="msg">正在加载...</div>
+  </div>
+  <div class="card">
+    <div class="label">时间</div>
+    <div class="content" id="date">-</div>
+  </div>
+  <div class="footer">
+    Powered by <a href="${GITHUB_URL}" target="_blank">WX Message Push</a>
+  </div>
 </div>
+
 <script>
-// 解析URL参数
-function getUrlParams() {
-    const params = new URLSearchParams(window.location.search);
-    return {
-        title: params.get('title') || '微信消息通知',
-        message: params.get('message') || '暂无消息内容',
-        date: params.get('date') || new Date().toLocaleString('zh-CN')
-    };
+// 安全解码，防止 XSS
+function decode(str) {
+  const el = document.createElement('textarea');
+  el.innerHTML = str;
+  return el.value;
 }
+const params = new URLSearchParams(location.search);
+const title = decode(params.get('title') || '微信消息通知');
+const message = decode(params.get('message') || '暂无内容');
+const date = decode(params.get('date') || new Date(Date.now() + 8*3600000).toLocaleString('zh-CN').replace(/\//g, '-'));
 
-// 更新页面内容
-function updatePageContent() {
-    const params = getUrlParams();
-    
-    // URL解码
-    const title = decodeURIComponent(params.title);
-    const message = decodeURIComponent(params.message);
-    const date = decodeURIComponent(params.date);
-    
-    // 设置页面内容
-    document.getElementById('pageTitle').textContent = title;
-    document.getElementById('messageDate').textContent = date;
-    
-    // 使用marked解析Markdown
-    try {
-        document.getElementById('messageContent').innerHTML = marked.parse(message);
-    } catch (e) {
-        document.getElementById('messageContent').textContent = message;
-    }
-    
-    // 更新页面标题
-    document.title = title;
+document.getElementById('title').textContent = title;
+document.getElementById('date').textContent = date;
+document.title = title;
+
+try {
+  document.getElementById('msg').innerHTML = marked.parse(message);
+} catch(e) {
+  document.getElementById('msg').textContent = message;
 }
-
-// 页面加载时执行
-window.addEventListener('DOMContentLoaded', updatePageContent);
 </script>
 </body>
 </html>`;
-      
+
       return new Response(standaloneHtml, {
         headers: {
           'Content-Type': 'text/html;charset=UTF-8',
-          'Content-Disposition': 'attachment; filename="wx-landing-page.html"',
+          'Content-Disposition': 'attachment; filename="wx-landing-page-apple-style.html"',
           'Cache-Control': 'no-cache'
         }
       });
@@ -592,17 +460,13 @@ window.addEventListener('DOMContentLoaded', updatePageContent);
       const title = url.searchParams.get('title') || '微信消息通知';
       const message = url.searchParams.get('message') || '暂无消息内容';
       const date = url.searchParams.get('date') || new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 19).replace('T', ' ');
-      
-      // 转义用户输入
       const safeTitle = escapeHtml(title);
       const safeMessage = escapeHtml(message);
       const safeDate = escapeHtml(date);
-      
       const html = BUILTIN_LANDING_PAGE_HTML
         .replace(/{{TITLE}}/g, safeTitle)
         .replace(/{{MESSAGE}}/g, safeMessage)
         .replace(/{{DATE}}/g, safeDate);
-      
       return new Response(html, { 
         headers: { 
           'Content-Type': 'text/html;charset=UTF-8',
