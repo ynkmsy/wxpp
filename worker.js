@@ -1,107 +1,119 @@
-function generateLandingPageHTML(title, message, date) {
-
-  const bg = "linear-gradient(160deg,#d0e0ff,#ffffff)";
-  const cardBg = "rgba(255,255,255,0.85)";
-  const accent = "#007aff";
-  const textColor = "#333";
-
-  return `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${title}</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'SF Pro Display','Segoe UI',sans-serif;}
-body{background:${bg};display:flex;justify-content:center;align-items:center;min-height:100vh;padding:16px;overflow-x:hidden;position:relative;}
-.container{max-width:720px;width:100%;background:${cardBg};backdrop-filter:blur(24px);border-radius:28px;padding:36px;box-shadow:0 16px 48px rgba(0,0,0,0.12);position:relative;overflow:hidden;}
-.title{font-size:1.7rem;color:${accent};text-align:center;margin-bottom:24px;font-weight:600;}
-.info-card{background:rgba(255,255,255,0.9);border-left:4px solid ${accent};border-radius:12px;padding:18px;margin:18px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);}
-.info-label{font-weight:600;color:${accent};margin-bottom:8px;}
-.info-content{color:${textColor};white-space:pre-line;line-height:1.6;}
-.footer{text-align:center;margin-top:32px;font-size:13px;color:#666;}
-.particles{position:absolute;top:0;left:0;width:100%;height:100%;z-index:-1;overflow:hidden;}
-.particle{position:absolute;background:rgba(0,122,255,0.25);border-radius:50%;animation:float 16s infinite linear;}
-@keyframes float{0%{transform:translateY(100vh);opacity:0;}12%{opacity:1;}88%{opacity:1;}100%{transform:translateY(-120px) translateX(80px);opacity:0;}}
-@media(max-width:480px){.container{padding:28px 20px;}.title{font-size:1.55rem;}}
-
-</style>
-</head>
-<body>
-<div class="particles" id="particles"></div>
-<div class="container">
-<h1 class="title">${title}</h1>
-<div class="info-card">
-<div class="info-label">消息内容</div>
-<div class="info-content" id="msg">${message}</div>
-</div>
-<div class="info-card">
-<div class="info-label">时间</div>
-<div class="info-content">${date}</div>
-</div>
-<div class="footer">Powered by <strong>SY</strong></div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script>
-for(let i=0;i<26;i++){
-  let e=document.createElement('div');
-  e.className='particle';
-  e.style.width=e.style.height=(Math.random()*3+2)+'px';
-  e.style.left=Math.random()*100+'%';
-  e.style.animationDelay=Math.random()*16+'s';
-  e.style.animationDuration=(18+Math.random()*22)+'s';
-  document.getElementById('particles').appendChild(e);
-}
-document.getElementById('msg').innerHTML = marked.parse(document.getElementById('msg').textContent);
-</script>
-</body>
-</html>`;
-}
-
-async function sendWeChatMessage(content, env) {
-  const tokenResp = await fetch(`https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${env.WX_APPID}&secret=${env.WX_SECRET}`);
-  const tokenData = await tokenResp.json();
-  if(!tokenData.access_token) throw new Error(tokenData.errmsg || "获取 access_token 失败");
-  const access_token = tokenData.access_token;
-
-  const sendResp = await fetch(`https://api.weixin.qq.com/cgi-bin/message/custom/send?access_token=${access_token}`, {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({
-      touser: env.WX_OPENID,
-      msgtype:"text",
-      text:{content}
-    })
-  });
-  return await sendResp.json();
-}
+/**
+ * WeChat Pusher (Smart Cleaner Version) - 修复版
+ */
+const CONFIG = {
+  WX_TEMPLATE_ID: "",
+  WX_APPID: "",
+  WX_SECRET: "",
+  WX_OPENID: "",
+  KV_BINDING_NAME: "WECHAT_KV"
+};
 
 export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
+  async fetch(request, env, ctx) {
+    // 优先读取环境变量
+    const appId = env.WX_APPID || CONFIG.WX_APPID;
+    const appSecret = env.WX_SECRET || CONFIG.WX_SECRET;
+    const userOpenId = env.WX_OPENID || CONFIG.WX_OPENID;
+    const templateId = env.WX_TEMPLATE_ID || CONFIG.WX_TEMPLATE_ID;
+    const kvStore = env.WECHAT_KV; // 推荐直接绑定 WECHAT_KV
 
-    // 落地页
-    if(request.method==="GET" && (url.searchParams.has("title") || url.searchParams.has("message"))) {
-      const title = url.searchParams.get("title") || "SY的消息通知";
-      const message = url.searchParams.get("message") || "暂无内容";
-      const date = url.searchParams.get("date") || new Date(Date.now()+8*3600000).toISOString().slice(0,19).replace("T"," ");
-      const html = generateLandingPageHTML(title,message,date);
-      return new Response(html,{headers:{"Content-Type":"text/html;charset=UTF-8"}});
+    if (!appId || !appSecret || !userOpenId || !templateId) {
+      return new Response(JSON.stringify({
+        "错误": "缺少必要配置",
+        "提示": "请在 Workers 环境变量中设置 WX_APPID, WX_SECRET, WX_OPENID, WX_TEMPLATE_ID"
+      }), { status: 400, headers: { "content-type": "application/json" } });
     }
 
-    // Webhook 推送
-    if(request.method==="POST") {
-      let data={};
-      try{ data = await request.json(); }catch{return new Response("Invalid JSON",{status:400});}
-      const content = data.content || "";
-      if(!content) return new Response("消息内容为空",{status:400});
-      try{
-        const result = await sendWeChatMessage(content, env);
-        return new Response(JSON.stringify(result),{status:200});
-      }catch(e){ return new Response("微信接口发送失败: "+e.message,{status:500}); }
+    let body = {};
+    try {
+      if (request.method === "POST") body = await request.json();
+    } catch (e) {
+      return new Response(JSON.stringify({ "错误": "无效的JSON" }), { status: 400 });
     }
 
-   
-    return new Response("WX Message Push Worker by SY",{status:200});
+    // === 1. 获取 access_token ===
+    const tokenUrl = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${appId}&secret=${appSecret}`;
+    const tokenResp = await fetch(tokenUrl);
+    const tokenData = await tokenResp.json();
+
+    if (!tokenData.access_token) {
+      const errMsg = tokenData.errmsg || "未知错误";
+      const commonTips = {
+        "invalid appid": "AppID 错误或未认证",
+        "invalid secret": "AppSecret 错误",
+        "appsecret missing": "AppSecret 未填写"
+      };
+      return new Response(JSON.stringify({
+        "获取Token失败": errMsg,
+        "提示": commonTips[errMsg] || "请检查 AppID 和 Secret 是否正确、账号是否认证"
+      }), { status: 500, headers: { "content-type": "application/json" } });
+    }
+
+    // === 2. 强力清洗数据 ===
+    const cleanStr = (val) => String(val || "无").replace(/^(发信人|内容|消息|短信内容|设备|时间|Sender|Content|Device|Time|From|Msg)[:：\s]*/gi, "").trim();
+
+    let rawSender = cleanStr(body.from || body.sender || "系统");
+    let rawContent = cleanStr(body.content || body.msg || body.message || "无内容");
+    let rawDevice = cleanStr(body.device_name || body.device || "Cloudflare Workers");
+
+    // 时间处理 - 标准化为北京时间
+    const now = new Date();
+    const bjTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Shanghai" }));
+    const timeStr = bjTime.toLocaleString('zh-CN', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    }).replace(/\//g, '-');
+
+    let rawTime = body.receive_time || timeStr;
+
+    // 标题处理
+    let title = body.title || "新消息通知";
+    if (body.server_name) { // 哪吒面板专属
+      title = "服务器报警";
+      rawSender = "哪吒监控";
+      rawDevice = body.server_name;
+      rawContent = body.message || "状态异常";
+    }
+
+    // 安全截取内容（避免表情符号被截断）
+    const safeSubstr = (str, len) => {
+      const arr = [...str];
+      return arr.slice(0, len).join("") + (arr.length > len ? "..." : "");
+    };
+
+    // === 3. 构造模板消息 ===
+    const wxPayload = {
+      touser: userOpenId,
+      template_id: templateId,  // 关键修复！
+      url: body.url || "",      // 可选：点击跳转链接
+      data: {
+        first: { value: `通知 ${title}`, color: "#E6A23C" },
+        keyword1: { value: rawSender, color: "#173177" },
+        keyword2: { value: safeSubstr(rawContent, 100), color: "#000000" },
+        keyword3: { value: rawDevice, color: "#666666" },
+        keyword4: { value: rawTime, color: "#666666" },
+        remark: { value: "来自 Cloudflare Workers 推送", color: "#888888" }
+      }
+    };
+
+    // === 4. 发送消息 ===
+    const sendUrl = `https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=${tokenData.access_token}`;
+    const wxResponse = await fetch(sendUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(wxPayload)
+    });
+
+    const result = await wxResponse.json();
+
+    if (result.errcode === 0) {
+      return new Response(JSON.stringify({ "成功": "微信推送成功" }), { headers: { "content-type": "application/json" } });
+    } else {
+      return new Response(JSON.stringify({
+        "微信推送失败": result.errmsg,
+        "errcode": result.errcode
+      }), { status: 500, headers: { "content-type": "application/json" } });
+    }
   }
 };
