@@ -1,119 +1,338 @@
-/**
- * WeChat Pusher (Smart Cleaner Version) - 修复版
- */
+
 const CONFIG = {
-  WX_TEMPLATE_ID: "",
-  WX_APPID: "",
-  WX_SECRET: "",
-  WX_OPENID: "",
-  KV_BINDING_NAME: "WECHAT_KV"
+  KV_TOKEN_KEY: "WX_ACCESS_TOKEN_FINAL", // Token在KV中存储的键名
+  KV_TOKEN_EXPIRE: 7100, // Token缓存时间（微信有效期为7200秒，提前100秒刷新）
 };
 
+/**
+ * 主请求处理函数
+ * @param {Request} request 传入的请求对象
+ * @param {Env} env 环境变量对象
+ * @returns {Promise<Response>} 返回的响应
+ */
 export default {
-  async fetch(request, env, ctx) {
-    // 优先读取环境变量
-    const appId = env.WX_APPID || CONFIG.WX_APPID;
-    const appSecret = env.WX_SECRET || CONFIG.WX_SECRET;
-    const userOpenId = env.WX_OPENID || CONFIG.WX_OPENID;
-    const templateId = env.WX_TEMPLATE_ID || CONFIG.WX_TEMPLATE_ID;
-    const kvStore = env.WECHAT_KV; // 推荐直接绑定 WECHAT_KV
-
-    if (!appId || !appSecret || !userOpenId || !templateId) {
-      return new Response(JSON.stringify({
-        "错误": "缺少必要配置",
-        "提示": "请在 Workers 环境变量中设置 WX_APPID, WX_SECRET, WX_OPENID, WX_TEMPLATE_ID"
-      }), { status: 400, headers: { "content-type": "application/json" } });
+  async fetch(request, env) {
+    // --- 1. 基础验证与配置读取 ---
+    // 仅处理POST请求
+    if (request.method !== "POST") {
+      return this.jsonResponse({ error: "Method not allowed. Use POST." }, 405);
     }
 
-    let body = {};
+    // 从环境变量读取所有必要配置
+    const {
+      WX_APPID,
+      WX_SECRET,
+      WX_OPENID,
+      WX_TEMPLATE_ID, // 微信6字段模板ID
+      WECHAT_KV, // KV存储命名空间绑定
+    } = env;
+
+    // 检查关键配置是否缺失
+    const missingConfigs = [];
+    if (!WX_APPID) missingConfigs.push("WX_APPID");
+    if (!WX_SECRET) missingConfigs.push("WX_SECRET");
+    if (!WX_OPENID) missingConfigs.push("WX_OPENID");
+    if (!WX_TEMPLATE_ID) missingConfigs.push("WX_TEMPLATE_ID");
+    if (!WECHAT_KV) missingConfigs.push("WECHAT_KV");
+
+    if (missingConfigs.length > 0) {
+      return this.jsonResponse(
+        { error: `Missing required environment variables: ${missingConfigs.join(", ")}` },
+        500
+      );
+    }
+
+    // --- 2. 解析请求数据并判断来源 ---
+    let incomingData = {};
     try {
-      if (request.method === "POST") body = await request.json();
-    } catch (e) {
-      return new Response(JSON.stringify({ "错误": "无效的JSON" }), { status: 400 });
+      incomingData = await request.json();
+    } catch (error) {
+      console.error("Failed to parse JSON:", error);
+      return this.jsonResponse({ error: "Invalid JSON payload." }, 400);
     }
 
-    // === 1. 获取 access_token ===
-    const tokenUrl = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${appId}&secret=${appSecret}`;
-    const tokenResp = await fetch(tokenUrl);
-    const tokenData = await tokenResp.json();
+    console.log("Received data:", JSON.stringify(incomingData));
 
-    if (!tokenData.access_token) {
-      const errMsg = tokenData.errmsg || "未知错误";
-      const commonTips = {
-        "invalid appid": "AppID 错误或未认证",
-        "invalid secret": "AppSecret 错误",
-        "appsecret missing": "AppSecret 未填写"
-      };
-      return new Response(JSON.stringify({
-        "获取Token失败": errMsg,
-        "提示": commonTips[errMsg] || "请检查 AppID 和 Secret 是否正确、账号是否认证"
-      }), { status: 500, headers: { "content-type": "application/json" } });
-    }
+    let messageType;
+    let templateData;
 
-    // === 2. 强力清洗数据 ===
-    const cleanStr = (val) => String(val || "无").replace(/^(发信人|内容|消息|短信内容|设备|时间|Sender|Content|Device|Time|From|Msg)[:：\s]*/gi, "").trim();
-
-    let rawSender = cleanStr(body.from || body.sender || "系统");
-    let rawContent = cleanStr(body.content || body.msg || body.message || "无内容");
-    let rawDevice = cleanStr(body.device_name || body.device || "Cloudflare Workers");
-
-    // 时间处理 - 标准化为北京时间
-    const now = new Date();
-    const bjTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Shanghai" }));
-    const timeStr = bjTime.toLocaleString('zh-CN', {
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-    }).replace(/\//g, '-');
-
-    let rawTime = body.receive_time || timeStr;
-
-    // 标题处理
-    let title = body.title || "新消息通知";
-    if (body.server_name) { // 哪吒面板专属
-      title = "服务器报警";
-      rawSender = "哪吒监控";
-      rawDevice = body.server_name;
-      rawContent = body.message || "状态异常";
-    }
-
-    // 安全截取内容（避免表情符号被截断）
-    const safeSubstr = (str, len) => {
-      const arr = [...str];
-      return arr.slice(0, len).join("") + (arr.length > len ? "..." : "");
-    };
-
-    // === 3. 构造模板消息 ===
-    const wxPayload = {
-      touser: userOpenId,
-      template_id: templateId,  // 关键修复！
-      url: body.url || "",      // 可选：点击跳转链接
-      data: {
-        first: { value: `通知 ${title}`, color: "#E6A23C" },
-        keyword1: { value: rawSender, color: "#173177" },
-        keyword2: { value: safeSubstr(rawContent, 100), color: "#000000" },
-        keyword3: { value: rawDevice, color: "#666666" },
-        keyword4: { value: rawTime, color: "#666666" },
-        remark: { value: "来自 Cloudflare Workers 推送", color: "#888888" }
-      }
-    };
-
-    // === 4. 发送消息 ===
-    const sendUrl = `https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=${tokenData.access_token}`;
-    const wxResponse = await fetch(sendUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(wxPayload)
-    });
-
-    const result = await wxResponse.json();
-
-    if (result.errcode === 0) {
-      return new Response(JSON.stringify({ "成功": "微信推送成功" }), { headers: { "content-type": "application/json" } });
+    // 判断逻辑：哪吒面板的告警数据通常包含 `alarmName` 或 `alarmLevel` 字段
+    if (incomingData.alarmName || incomingData.alarmLevel) {
+      console.log("Identified data source: NeZha Panel");
+      messageType = "nezha";
+      templateData = this.processNezhaData(incomingData);
     } else {
-      return new Response(JSON.stringify({
-        "微信推送失败": result.errmsg,
-        "errcode": result.errcode
-      }), { status: 500, headers: { "content-type": "application/json" } });
+      console.log("Identified data source: SMS Forwarder (default)");
+      messageType = "sms";
+      templateData = this.processSmsData(incomingData);
     }
-  }
+
+    // --- 3. 获取或刷新微信Access Token ---
+    const accessToken = await this.getWechatAccessToken(WX_APPID, WX_SECRET, WECHAT_KV);
+    if (!accessToken) {
+      return this.jsonResponse({ error: "Failed to obtain WeChat access token." }, 500);
+    }
+
+    // --- 4. 构建符合6字段模板的微信请求体 ---
+    // !!! 重要：此处的字段顺序和名称必须与你在微信公众平台申请的模板完全一致 !!!
+    const wechatPayload = {
+      touser: WX_OPENID,
+      template_id: WX_TEMPLATE_ID, // 使用环境变量中的模板ID
+      data: {
+        first: {
+          value: templateData.first,
+          color: templateData.firstColor || "#E6A23C", // 默认橙色
+        },
+        keyword1: {
+          // 类型
+          value: templateData.keyword1,
+          color: "#673AB7", // 紫色
+        },
+        keyword2: {
+          // 发信人/主机
+          value: templateData.keyword2,
+          color: "#173177", // 深蓝色
+        },
+        keyword3: {
+          // 内容/详情
+          value: templateData.keyword3,
+          color: "#000000", // 黑色
+        },
+        keyword4: {
+          // SIM卡/状态
+          value: templateData.keyword4,
+          color: "#666666", // 深灰色
+        },
+        keyword5: {
+          // 时间
+          value: templateData.keyword5,
+          color: "#999999", // 浅灰色
+        },
+        keyword6: {
+          // 设备/IP
+          value: templateData.keyword6,
+          color: "#666666", // 深灰色
+        },
+        // 此模板不包含 remark 字段，故不发送
+      },
+    };
+
+    console.log("WeChat payload to be sent:", JSON.stringify(wechatPayload));
+
+    // --- 5. 发送模板消息至微信 ---
+    const wechatResult = await this.sendWechatTemplateMessage(
+      accessToken,
+      wechatPayload
+    );
+    console.log("WeChat API response:", wechatResult);
+
+    // --- 6. 返回处理结果 ---
+    if (wechatResult.errcode === 0) {
+      return this.jsonResponse({
+        success: true,
+        message: "WeChat template message sent successfully.",
+        type: messageType,
+        msgid: wechatResult.msgid,
+        preview: `【预览】 ${templateData.first} | 类型：${templateData.keyword1} | 发信人：${templateData.keyword2}`,
+      });
+    } else {
+      // 微信接口返回明确错误
+      return this.jsonResponse(
+        {
+          success: false,
+          error: `WeChat API error: ${wechatResult.errmsg}`,
+          errcode: wechatResult.errcode,
+          type: messageType,
+        },
+        502 // Bad Gateway
+      );
+    }
+  },
+
+  /**
+   * 处理来自短信转发器的数据
+   * @param {object} data 原始JSON数据
+   * @returns {object} 格式化后的模板数据对象
+   */
+  processSmsData(data) {
+    // 安全获取字段值的辅助函数
+    const getField = (obj, ...keys) => {
+      for (const key of keys) {
+        if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+          return String(obj[key]).trim();
+        }
+      }
+      return ""; // 返回空字符串而非“未知”，避免模板中出现“未知”字样
+    };
+
+    // 提取字段
+    const sender = getField(data, "from", "sender", "phone");
+    const rawContent = getField(data, "msg", "content", "message", "sms");
+    const deviceName = getField(data, "device", "device_name", "deviceName");
+    const cardSlot = getField(data, "card_slot", "slot", "sim", "card");
+    let receiveTime = getField(data, "time", "receive_time", "date");
+
+    // 处理时间：优先使用数据中的时间，若无则使用当前时间
+    if (!receiveTime) {
+      receiveTime = new Date().toLocaleString("zh-CN", {
+        timeZone: "Asia/Shanghai",
+        hour12: false,
+      });
+      // 将格式从 `yyyy/mm/dd hh:mm:ss` 转换为 `yyyy-mm-dd hh:mm:ss`
+      receiveTime = receiveTime.replace(/\//g, "-");
+    }
+
+    // 内容截断，防止过长
+    const content =
+      rawContent.length > 100
+        ? rawContent.substring(0, 100) + "..."
+        : rawContent;
+
+    // 返回映射到6字段模板的数据对象
+    return {
+      first: "📱 收到新短信",
+      keyword1: "短信通知", // 类型
+      keyword2: sender || "未知号码", // 发信人
+      keyword3: content || "无内容", // 内容
+      keyword4: cardSlot, // SIM卡信息
+      keyword5: receiveTime, // 接收时间
+      keyword6: deviceName, // 设备名称
+    };
+  },
+
+  /**
+   * 处理来自哪吒面板的告警数据
+   * @param {object} data 原始JSON数据
+   * @returns {object} 格式化后的模板数据对象
+   */
+  processNezhaData(data) {
+    const getField = (obj, ...keys) => {
+      for (const key of keys) {
+        if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+          return String(obj[key]).trim();
+        }
+      }
+      return "N/A";
+    };
+
+    const alarmName = getField(data, "alarmName", "name", "title");
+    const alarmLevel = getField(data, "alarmLevel", "level", "status");
+    const alarmDetail = getField(data, "alarmText", "message", "content");
+    const alarmTarget = getField(data, "target", "hostname", "server", "ip");
+    let alarmTime = getField(data, "alarmTime", "time", "createdAt");
+
+    if (!alarmTime || alarmTime === "N/A") {
+      alarmTime = new Date().toLocaleString("zh-CN", {
+        timeZone: "Asia/Shanghai",
+        hour12: false,
+      });
+      alarmTime = alarmTime.replace(/\//g, "-");
+    }
+
+    // 根据告警级别设置标题颜色
+    let firstColor = "#E6A23C"; // 默认橙色
+    if (alarmLevel.includes("警告") || alarmLevel.includes("error")) {
+      firstColor = "#F56C6C"; // 红色
+    } else if (alarmLevel.includes("正常") || alarmLevel.includes("ok")) {
+      firstColor = "#67C23A"; // 绿色
+    }
+
+    // 返回映射到同一6字段模板的数据对象
+    // 注意：字段语义根据哪吒数据做了适配调整
+    return {
+      first: `🚨 ${alarmName}`,
+      firstColor: firstColor,
+      keyword1: "哪吒监控", // 类型
+      keyword2: alarmTarget, // 目标主机（对应“发信人”字段）
+      keyword3: alarmDetail, // 告警详情（对应“内容”字段）
+      keyword4: `等级：${alarmLevel}`, // 告警等级（对应“SIM卡”字段）
+      keyword5: alarmTime, // 告警时间
+      keyword6: getField(data, "ip", "location", "额外信息"), // 其他信息（对应“设备”字段）
+    };
+  },
+
+  /**
+   * 获取微信Access Token（带KV缓存）
+   * @param {string} appId
+   * @param {string} appSecret
+   * @param {KVNamespace} kvStore
+   * @returns {Promise<string|null>} Access Token 或 null
+   */
+  async getWechatAccessToken(appId, appSecret, kvStore) {
+    // 1. 尝试从KV缓存读取
+    let cachedToken = await kvStore.get(CONFIG.KV_TOKEN_KEY);
+    if (cachedToken) {
+      console.log("Using cached WeChat access token.");
+      return cachedToken;
+    }
+
+    console.log("Cached token not found or expired. Requesting new one...");
+
+    // 2. 向微信服务器请求新Token
+    const tokenUrl = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${appId}&secret=${appSecret}`;
+    try {
+      const response = await fetch(tokenUrl);
+      const result = await response.json();
+
+      if (result.access_token) {
+        const newToken = result.access_token;
+        // 3. 将新Token存入KV，并设置过期时间
+        await kvStore.put(CONFIG.KV_TOKEN_KEY, newToken, {
+          expirationTtl: CONFIG.KV_TOKEN_EXPIRE,
+        });
+        console.log("New WeChat access token obtained and cached.");
+        return newToken;
+      } else {
+        // 请求Token失败，记录微信返回的错误
+        console.error(
+          `Failed to get WeChat access token. ErrCode: ${result.errcode}, ErrMsg: ${result.errmsg}`
+        );
+        return null;
+      }
+    } catch (networkError) {
+      console.error("Network error while fetching WeChat token:", networkError);
+      return null;
+    }
+  },
+
+  /**
+   * 发送模板消息到微信
+   * @param {string} accessToken
+   * @param {object} payload
+   * @returns {Promise<object>} 微信API的响应结果
+   */
+  async sendWechatTemplateMessage(accessToken, payload) {
+    const apiUrl = `https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=${accessToken}`;
+    try {
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Failed to send message to WeChat API:", error);
+      return {
+        errcode: -1,
+        errmsg: `Network error: ${error.message}`,
+      };
+    }
+  },
+
+  /**
+   * 返回JSON格式的HTTP响应
+   * @param {object} data 响应数据
+   * @param {number} statusCode HTTP状态码
+   * @returns {Response}
+   */
+  jsonResponse(data, statusCode = 200) {
+    return new Response(JSON.stringify(data, null, 2), {
+      status: statusCode,
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+      },
+    });
+  },
 };
