@@ -162,7 +162,7 @@ export default {
           return String(obj[key]).trim();
         }
       }
-      return ""; // 返回空字符串而非“未知”，避免模板中出现“未知”字样
+      return ""; 
     };
 
     // 提取字段
@@ -172,21 +172,23 @@ export default {
     const cardSlot = getField(data, "card_slot", "slot", "sim", "card");
     let receiveTime = getField(data, "time", "receive_time", "date");
 
-    // 处理时间：优先使用数据中的时间，若无则使用当前时间
+    // 处理时间
     if (!receiveTime) {
       receiveTime = new Date().toLocaleString("zh-CN", {
         timeZone: "Asia/Shanghai",
         hour12: false,
       });
-      // 将格式从 `yyyy/mm/dd hh:mm:ss` 转换为 `yyyy-mm-dd hh:mm:ss`
       receiveTime = receiveTime.replace(/\//g, "-");
     }
 
-    // 内容截断，防止过长
+    // --- 修改部分开始 ---
+    // 将限制从 100 提升到 600 (或者你可以直接去掉这个 if 判断使用全文)
+    const limit = 600; 
     const content =
-      rawContent.length > 100
-        ? rawContent.substring(0, 100) + "..."
+      rawContent.length > limit
+        ? rawContent.substring(0, limit) + "..."
         : rawContent;
+    // --- 修改部分结束 ---
 
     // 返回映射到6字段模板的数据对象
     return {
