@@ -1,4 +1,9 @@
-
+/**
+ * 【终极稳定版】统一微信推送网关
+ * 功能：同时处理「短信转发器」和「哪吒面板」的Webhook，发送至微信模板消息
+ * 模板：使用6字段模板，字段顺序为：类型、发信人、内容、SIM卡、时间、设备
+ * 配置：所有敏感信息均通过环境变量设置，代码中无任何硬编码密钥。
+ */
 const CONFIG = {
   KV_TOKEN_KEY: "WX_ACCESS_TOKEN_FINAL", // Token在KV中存储的键名
   KV_TOKEN_EXPIRE: 7100, // Token缓存时间（微信有效期为7200秒，提前100秒刷新）
@@ -149,7 +154,7 @@ export default {
     }
   },
 
-  /**
+/**
    * 处理来自短信转发器的数据
    * @param {object} data 原始JSON数据
    * @returns {object} 格式化后的模板数据对象
